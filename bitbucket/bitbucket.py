@@ -18,6 +18,7 @@ import requests
 from .issue import Issue
 from .repository import Repository
 from .service import Service
+from .webhook import Webhook
 from .ssh import SSH
 from .deploy_key import DeployKey
 
@@ -26,7 +27,8 @@ from .deploy_key import DeployKey
 #  = URLs =
 #  ========
 URLS = {
-    'BASE': 'https://bitbucket.org/!api/1.0/%s',
+    'BASE': 'https://api.bitbucket.org/2.0/%s',
+    'BASE_V1': 'https://api.bitbucket.org/1.0/%s',
     # Get user profile and repos
     'GET_USER': 'users/%(username)s/',
     'GET_USER_PRIVILEGES': 'user/privileges',
@@ -53,6 +55,7 @@ class Bitbucket(object):
 
         self.repository = Repository(self)
         self.service = Service(self)
+        self.webhook = Webhook(self)
         self.ssh = SSH(self)
         self.issue = Issue(self)
         self.deploy_key = DeployKey(self)
@@ -225,6 +228,7 @@ class Bitbucket(object):
             params=params,
             data=kwargs)
         s = Session()
+
         resp = s.send(r.prepare())
         status = resp.status_code
         text = resp.text
@@ -250,10 +254,10 @@ class Bitbucket(object):
         else:
             return (False, error)
 
-    def url(self, action, **kwargs):
+    def url(self, base='BASE', action='', **kwargs):
         """ Construct and return the URL for a specific API service. """
         # TODO : should be static method ?
-        return self.URLS['BASE'] % self.URLS[action] % kwargs
+        return self.URLS[base] % self.URLS[action] % kwargs
 
     #  =====================
     #  = General functions =
