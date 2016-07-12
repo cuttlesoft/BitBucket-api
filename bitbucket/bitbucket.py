@@ -23,6 +23,11 @@ from .ssh import SSH
 from .deploy_key import DeployKey
 
 
+class BitbucketError(Exception):
+    """Baseclass for all API errors."""
+    pass
+
+
 #  ========
 #  = URLs =
 #  ========
@@ -230,29 +235,15 @@ class Bitbucket(object):
         s = Session()
 
         resp = s.send(r.prepare())
-        status = resp.status_code
-        text = resp.text
-        error = resp.reason
-        if status >= 200 and status < 300:
-            if text:
-                try:
-                    return (True, json.loads(text))
-                except TypeError:
-                    pass
-                except ValueError:
-                    pass
-            return (True, text)
-        elif status >= 300 and status < 400:
-            return (
-                False,
-                'Unauthorized access, '
-                'please check your credentials.')
-        elif status >= 400 and status < 500:
-            return (False, 'Service not found.')
-        elif status >= 500 and status < 600:
-                return (False, 'Server error.')
+
+        if resp.status_code not in [200, 201]:
+            raise BitbucketError(" ".join([
+                str(resp.status_code),
+                str(resp.reason),
+                '[%s]' % (resp.text)
+            ]))
         else:
-            return (False, error)
+            return resp.json()
 
     def url(self, base='BASE', action='', **kwargs):
         """ Construct and return the URL for a specific API service. """
