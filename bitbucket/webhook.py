@@ -24,7 +24,9 @@ class Webhook(object):
         """
         repo_slug = repo_slug or self.bitbucket.repo_slug or ''
         url = self.bitbucket.url(action='SET_WEBHOOK', username=self.bitbucket.username, repo_slug=repo_slug)
-        return self.bitbucket.dispatch('POST', url, auth=self.bitbucket.auth, type=service, **kwargs)
+        kwargs['type'] = service
+        # dumb.
+        return self.bitbucket.dispatch('POST', url, auth=self.bitbucket.auth, dump_json=True, **kwargs)
 
     def get(self, service_id, repo_slug=None):
         """ Get a service (hook) from one of your repositories."""
