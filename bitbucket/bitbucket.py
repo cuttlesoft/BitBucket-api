@@ -8,7 +8,10 @@ try:
 except ImportError:
     from urllib.parse import parse_qs
 
+from flask import jsonify
+
 import json
+import simplejson
 import re
 
 from requests import Request, Session
@@ -18,15 +21,22 @@ import requests
 from .issue import Issue
 from .repository import Repository
 from .service import Service
+from .webhook import Webhook
 from .ssh import SSH
 from .deploy_key import DeployKey
+
+
+class BitbucketError(Exception):
+    """Baseclass for all API errors."""
+    pass
 
 
 #  ========
 #  = URLs =
 #  ========
 URLS = {
-    'BASE': 'https://bitbucket.org/!api/1.0/%s',
+    'BASE': 'https://api.bitbucket.org/2.0/%s',
+    'BASE_V1': 'https://api.bitbucket.org/1.0/%s',
     # Get user profile and repos
     'GET_USER': 'users/%(username)s/',
     'GET_USER_PRIVILEGES': 'user/privileges',
@@ -53,6 +63,7 @@ class Bitbucket(object):
 
         self.repository = Repository(self)
         self.service = Service(self)
+        self.webhook = Webhook(self)
         self.ssh = SSH(self)
         self.issue = Issue(self)
         self.deploy_key = DeployKey(self)
@@ -213,18 +224,39 @@ class Bitbucket(object):
     #  = High lvl functions =
     #  ======================
 
-    def dispatch(self, method, url, auth=None, params=None, **kwargs):
+    def dispatch(self, method, dispatch_url, auth=None, params=None, dump_json=False, **kwargs):
         """ Send HTTP request, with given method,
             credentials and data to the given URL,
             and return the success and the result on success.
+
+            Exception: Server error. { "message": "No JSON object could be decoded" }
+            TO FIX --> pass dump_json=True  <-- TO FIX
         """
+
+        if dump_json:
+            kwargs = json.dumps(kwargs)
+
         r = Request(
             method=method,
-            url=url,
+            url=dispatch_url,
             auth=auth,
             params=params,
             data=kwargs)
         s = Session()
+
+        # resp = s.send(r.prepare())
+        #
+        # if resp.status_code not in [200, 201]:
+        #     raise BitbucketError(" ".join([
+        #         str(resp.status_code),
+        #         str(resp.reason),
+        #         '[%s]' % (resp.text)
+        #     ]))
+        # else:
+        #     return resp.json()
+
+        print(dispatch_url)
+
         resp = s.send(r.prepare())
         status = resp.status_code
         text = resp.text
@@ -250,10 +282,11 @@ class Bitbucket(object):
         else:
             return (False, error)
 
-    def url(self, action, **kwargs):
+
+    def url(self, base='BASE', action='', **kwargs):
         """ Construct and return the URL for a specific API service. """
         # TODO : should be static method ?
-        return self.URLS['BASE'] % self.URLS[action] % kwargs
+        return self.URLS[base] % self.URLS[action] % kwargs
 
     #  =====================
     #  = General functions =

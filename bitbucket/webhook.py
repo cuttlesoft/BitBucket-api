@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 URLS = {
     # Get services (hooks)
-    'GET_SERVICE': 'repositories/%(username)s/%(repo_slug)s/services/%(service_id)s/',
-    'GET_SERVICES': 'repositories/%(username)s/%(repo_slug)s/services/',
+    'GET_WEBHOOK': 'repositories/%(username)s/%(repo_slug)s/hooks/%(service_id)s/',
+    'GET_WEBHOOKS': 'repositories/%(username)s/%(repo_slug)s/hooks/',
     # Set services (hooks)
-    'SET_SERVICE': 'repositories/%(username)s/%(repo_slug)s/services/',
-    'UPDATE_SERVICE': 'repositories/%(username)s/%(repo_slug)s/services/%(service_id)s/',
-    'DELETE_SERVICE': 'repositories/%(username)s/%(repo_slug)s/services/%(service_id)s/',
+    'SET_WEBHOOK': 'repositories/%(username)s/%(repo_slug)s/hooks/',
+    'UPDATE_WEBHOOK': 'repositories/%(username)s/%(repo_slug)s/hooks/%(service_id)s/',
+    'DELETE_WEBHOOK': 'repositories/%(username)s/%(repo_slug)s/hooks/%(service_id)s/',
 }
 
 
-class Service(object):
+class Webhook(object):
     """ This class provide services-related methods to Bitbucket objects."""
 
     def __init__(self, bitbucket):
@@ -23,20 +23,22 @@ class Service(object):
             you can pass them as keyword arguments (fieldname='fieldvalue').
         """
         repo_slug = repo_slug or self.bitbucket.repo_slug or ''
-        url = self.bitbucket.url('BASE_V1', 'SET_SERVICE', username=self.bitbucket.username, repo_slug=repo_slug)
-        return self.bitbucket.dispatch('POST', url, auth=self.bitbucket.auth, type=service, **kwargs)
+        url = self.bitbucket.url(action='SET_WEBHOOK', username=self.bitbucket.username, repo_slug=repo_slug)
+        kwargs['type'] = service
+        # dumb.
+        return self.bitbucket.dispatch('POST', url, auth=self.bitbucket.auth, dump_json=True, **kwargs)
 
     def get(self, service_id, repo_slug=None):
         """ Get a service (hook) from one of your repositories."""
         repo_slug = repo_slug or self.bitbucket.repo_slug or ''
-        url = self.bitbucket.url('BASE_V1', 'GET_SERVICE', username=self.bitbucket.username, repo_slug=repo_slug, service_id=service_id)
+        url = self.bitbucket.url(action='GET_WEBHOOK', username=self.bitbucket.username, repo_slug=repo_slug, service_id=service_id)
         return self.bitbucket.dispatch('GET', url, auth=self.bitbucket.auth)
 
     def update(self, service_id, repo_slug=None, **kwargs):
         """ Update a service (hook) from one of your repositories.
         """
         repo_slug = repo_slug or self.bitbucket.repo_slug or ''
-        url = self.bitbucket.url('BASE_V1', 'UPDATE_SERVICE', username=self.bitbucket.username, repo_slug=repo_slug, service_id=service_id)
+        url = self.bitbucket.url(action='UPDATE_WEBHOOK', username=self.bitbucket.username, repo_slug=repo_slug, service_id=service_id)
         return self.bitbucket.dispatch('PUT', url, auth=self.bitbucket.auth, **kwargs)
 
     def delete(self, service_id, repo_slug=None):
@@ -44,20 +46,20 @@ class Service(object):
             Please use with caution as there is NO confimation and NO undo.
         """
         repo_slug = repo_slug or self.bitbucket.repo_slug or ''
-        url = self.bitbucket.url('BASE_V1', 'DELETE_SERVICE', username=self.bitbucket.username, repo_slug=repo_slug, service_id=service_id)
+        url = self.bitbucket.url(action='DELETE_WEBHOOK', username=self.bitbucket.username, repo_slug=repo_slug, service_id=service_id)
         return self.bitbucket.dispatch('DELETE', url, auth=self.bitbucket.auth)
 
     def all(self, repo_slug=None):
         """ Get all services (hook) from one of your repositories.
         """
         repo_slug = repo_slug or self.bitbucket.repo_slug or ''
-        url = self.bitbucket.url('BASE_V1', 'GET_SERVICES', username=self.bitbucket.username, repo_slug=repo_slug)
+        url = self.bitbucket.url(action='GET_WEBHOOKS', username=self.bitbucket.username, repo_slug=repo_slug)
         return self.bitbucket.dispatch('GET', url, auth=self.bitbucket.auth)
 
 #  ============
 #  = Services =
 #  ============
-# SERVICES = {
+# WEBHOOKS = {
 #   'Basecamp': ('Username', 'Password', 'Discussion URL',),
 #   'CIA.vc': ('Module', 'Project',),
 #   'Email Diff': ('Email',),
